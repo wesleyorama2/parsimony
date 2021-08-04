@@ -168,7 +168,7 @@ Project Link: [https://github.com/wesleyorama2/parsimony](https://github.com/wes
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/wesleyorama2/parsimony
+[contributors-shield]: https://img.shields.io/github/contributors/wesleyorama2/parsimony.svg?style=for-the-badge
 [contributors-url]: https://github.com/wesleyorama2/parsimony/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/wesleyorama2/parsimony.svg?style=for-the-badge
 [forks-url]: https://github.com/wesleyorama2/parsimony/network/members
