@@ -76,6 +76,8 @@ Keeping an eye on AWS spend is important for many people / teams. I wanted to wr
 * [Python](https://python.com)
 * [boto](https://aws.amazon.com/sdk-for-python/)
 * [quickchart](https://quickchart.io)
+* [bolt](https://api.slack.com/start/building/bolt-python)
+* [ngrok](https://dashboard.ngrok.com/get-started/setup)
 
 
 
@@ -95,6 +97,7 @@ This is an example of how to list things you need to use the software and how to
   ```sh
   pip3 install virtualenvwrapper
   ```
+* [ngrok](https://dashboard.ngrok.com/get-started/setup)
 
 ### Installation
 #### Development
@@ -110,7 +113,10 @@ This is an example of how to list things you need to use the software and how to
    ```sh
    pip3 install -r requirements.txt
    ```
-4. Start development!
+4. Start ngrok on port 3000
+   ```sh
+   ngrok http 3000
+   ```
 
 
 <!-- USAGE EXAMPLES -->
