@@ -182,6 +182,7 @@ def slash_parsimony(ack, respond, logger):
         ack()
         respond(
             {
+                "response_type": "in_channel",
                 "blocks": [
                     {
                         "type": "image",
@@ -190,7 +191,7 @@ def slash_parsimony(ack, respond, logger):
                         "image_url": chart_url,
                         "alt_text": "Chart showing latest data",
                     }
-                ]
+                ],
             }
         )
 

@@ -121,7 +121,11 @@ This is an example of how to list things you need to use the software and how to
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-TBD
+*_NOTE: This is very early in the development of Parsimony_*
+<p align="center">
+  <a href="https://github.com/wesleyorama2/parsimony">
+    <img src="images/parsimony-first-run.gif" alt="Logo" width="500" height="300">
+  </a>
 
 
 <!-- ROADMAP -->
