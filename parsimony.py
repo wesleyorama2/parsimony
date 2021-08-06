@@ -11,6 +11,7 @@ import urllib.parse
 from botocore.exceptions import BotoCoreError
 from botocore.signers import add_generate_presigned_post
 from slack_bolt import App
+from quickchart import QuickChart, QuickChartFunction
 
 
 def getDays():
@@ -28,6 +29,13 @@ def getCost(client: boto3.client, start: str, end: str):
     response = client.get_cost_and_usage(
         TimePeriod={"Start": start, "End": end},
         Granularity="DAILY",
+        # Filter={
+        #     'Dimensions': {
+        #         'Key': 'LINKED_ACCOUNT',
+        #         'Values': [''],
+        #         'MatchOptions': ['EQUALS']
+        #     }
+        # },
         Metrics=[
             "AmortizedCost",
         ],
@@ -36,23 +44,34 @@ def getCost(client: boto3.client, start: str, end: str):
 
 
 def getChart(url, costResponse: dict):
+    qc = QuickChart()
+    qc.width = 500
+    qc.height = 300
+    qc.background_color = "transparent"
     lables = []
     data = []
     results = costResponse["ResultsByTime"]
 
     for result in results:
         lables.append(result["TimePeriod"]["Start"])
-        data.append(result["Total"]["AmortizedCost"]["Amount"])
+        formated_amount = round(float(result["Total"]["AmortizedCost"]["Amount"]),2)
+        data.append(formated_amount)
 
-    chart = {
+    qc.config = {
         "type": "line",
-        "data": {"labels": lables, "datasets": [{"label": "Cost in $", "data": data}]},
+        "data": { 
+            "labels": lables, 
+            "datasets": [{ 
+                "label": "Cost in $", 
+                "data": data,
+                "backgroundColor": QuickChartFunction("getGradientFillHelper('vertical', ['rgba(63, 100, 249, 0.2)', 'rgba(255, 255, 255, 0.2)'])"),
+            }]
+        },
         "options": {
             "plugins": {
                 "tickFormat": {
                     "style": "currency",
-                    "currency": "USD",
-                    "minimumFractionDigits": 10,
+                    "currency": "USD"                    
                 },
                 "datalabels": {
                     "anchor": "end",
@@ -62,16 +81,13 @@ def getChart(url, costResponse: dict):
                     "borderColor": "rgba(34, 139, 34, 1.0)",
                     "borderWidth": 1,
                     "borderRadius": 5,
-                },
+                    "formatter": QuickChartFunction('''(value) => { return '$' + value; }'''),
+                }
             }
         },
     }
 
-    chart_json = urllib.parse.quote(json.dumps(chart))
-
-    chart_url = url + "chart?c=" + chart_json
-
-    return chart_url
+    return qc.get_url()
 
 
 def generateConfig(configFile: str):
@@ -82,25 +98,15 @@ def generateConfig(configFile: str):
         logging.warning(
             "AWS section not defined in config.ini. Assuming AWS keys are provided by ENV VAR"
         )
-    else:
-        if not config.has_option("AWS", "access_key"):
-            logging.critical(
-                "AWS section defined in config, but access_key not defined in AWS section"
-            )
-            sys.exit("fatal error")
-        elif not config.has_option("AWS", "secret_key"):
-            logging.critical(
-                "AWS section defined in config, but secret_key not defined in AWS section"
-            )
-            sys.exit("fatal error")
 
     return config
 
 
 config = generateConfig("config.ini")
 url = config["quickchart"]["url"]
+accounts = json.loads(config["AWS"]["accounts"])
 
-# I hate how this boto checking is implemented... but I dont know how to do this better.
+# I hate how this boto checking is implemented... but I don't know how to do this better.
 try:
     client = boto3.client(
         "ce",
@@ -137,7 +143,7 @@ app = App(token=slack_token, signing_secret=slack_signing_secret)
 # getChart(url, cost)
 
 
-@app.event("app_home_opened")
+@app.event("app_home_opened") # type: ignore
 def update_home_tab(client, event, logger):
     try:
         # views.publish is the method that your app uses to push a view to the Home tab
@@ -173,7 +179,7 @@ def update_home_tab(client, event, logger):
         logger.error(f"Error publishing home tab: {e}")
 
 
-@app.command("/parsimony")
+@app.command("/parsimony") # type: ignore
 def slash_parsimony(ack, respond, logger):
     try:
         start, end = getDays()
