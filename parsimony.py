@@ -119,11 +119,10 @@ except KeyError:
         sts = boto3.client("sts")
         sts.get_caller_identity()
     except BotoCoreError as e:
-        logging.critical(
-            "no AWS credentials found, please set credentials via ENV VAR or config.ini \n    actual BotoCore error: "
+        logging.warning(
+            "no AWS credentials found, assuming credentials will be provided later or your forgot to provide via ENV VAR or config.ini \n    actual BotoCore error: "
             + format(str(e))
         )
-        sys.exit("fatal error")
 
 try:
     slack_token = config["slack"]["slack_bot_token"]
@@ -137,11 +136,6 @@ except KeyError:
         sys.exit("fatal error")
 
 app = App(token=slack_token, signing_secret=slack_signing_secret)
-
-# start, end = getDays()
-# cost = getCost(client, start, end)
-# getChart(url, cost)
-
 
 @app.event("app_home_opened") # type: ignore
 def update_home_tab(client, event, logger):
