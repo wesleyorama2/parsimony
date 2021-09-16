@@ -1,5 +1,19 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.8.12-alpine3.14
+FROM python:3.8.12-alpine3.14 as base
+
+FROM base as builder
+
+RUN mkdir /install
+WORKDIR /install
+
+COPY requirements.txt /requirements.txt
+
+# Install pre-requirements
+RUN apk add build-base
+
+RUN pip install --prefix=/install -r /requirements.txt
+
+FROM base
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -11,8 +25,7 @@ ENV PYTHONUNBUFFERED=1
 RUN apk add build-base
 
 # Install pip requirements
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
+COPY --from=builder /install /usr/local
 
 WORKDIR /app
 COPY . /app
@@ -21,6 +34,8 @@ COPY . /app
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
+
+EXPOSE 3000 5000
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "parsimony.py"]
