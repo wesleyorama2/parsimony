@@ -34,7 +34,7 @@ six==1.16.0
 slack-bolt==1.7.0
 slack-sdk==3.8.0
 toml==0.10.2
-tomli==1.2.0
+tomli==1.2.1
 urllib3==1.26.6
 Werkzeug==2.0.1
 wrapt==1.12.1
