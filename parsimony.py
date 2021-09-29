@@ -6,24 +6,28 @@ from flask import Flask
 import configparser
 from datetime import date, timedelta
 import logging
-import json
 from botocore.exceptions import BotoCoreError
-from slack_bolt import App # type: ignore
+from slack_bolt import App  # type: ignore
 from quickchart import QuickChart, QuickChartFunction
 import threading
 
+
 def healthcheckThread():
     print("Starting " + threading.currentThread().getName())
-    # TODO: Maybe something lighter than flask? Also implement real healthcheck...
+    # TODO: Maybe something lighter than flask?
+    # Also implement real healthcheck...
     health = Flask(__name__)
+
     @health.route('/healthz')
     def healthz():
         return "OK"
     health.run(host='0.0.0.0')
     print("Exiting " + threading.currentThread().getName())
 
+
 def parsimonyThread():
     print("Starting " + threading.currentThread().getName())
+
     def getDays():
         today = date.today()
         start = today - timedelta(days=today.weekday() + 1 % 7)
@@ -33,7 +37,6 @@ def parsimonyThread():
         end = str(end)
 
         return start, end
-
 
     def getCost(client: boto3.client, start: str, end: str):
         response = client.get_cost_and_usage(
@@ -52,7 +55,6 @@ def parsimonyThread():
         )
         return response
 
-
     def getChart(url, costResponse: dict):
         qc = QuickChart()
         qc.width = 500
@@ -64,24 +66,31 @@ def parsimonyThread():
 
         for result in results:
             lables.append(result["TimePeriod"]["Start"])
-            formated_amount = round(float(result["Total"]["AmortizedCost"]["Amount"]),2)
+            formated_amount = round(
+                float(
+                    result["Total"]["AmortizedCost"]["Amount"]
+                    ), 2)
             data.append(formated_amount)
 
         qc.config = {
             "type": "line",
-            "data": { 
-                "labels": lables, 
-                "datasets": [{ 
-                    "label": "Cost in $", 
+            "data": {
+                "labels": lables,
+                "datasets": [{
+                    "label": "Cost in $",
                     "data": data,
-                    "backgroundColor": QuickChartFunction("getGradientFillHelper('vertical', ['rgba(63, 100, 249, 0.2)', 'rgba(255, 255, 255, 0.2)'])"),
+                    "backgroundColor": QuickChartFunction(
+                        "getGradientFillHelper('vertical', \
+                        ['rgba(63, 100, 249, 0.2)', \
+                        'rgba(255, 255, 255, 0.2)'])"
+                        ),
                 }]
             },
             "options": {
                 "plugins": {
                     "tickFormat": {
                         "style": "currency",
-                        "currency": "USD"                    
+                        "currency": "USD"
                     },
                     "datalabels": {
                         "anchor": "end",
@@ -91,7 +100,9 @@ def parsimonyThread():
                         "borderColor": "rgba(34, 139, 34, 1.0)",
                         "borderWidth": 1,
                         "borderRadius": 5,
-                        "formatter": QuickChartFunction('''(value) => { return '$' + value; }'''),
+                        "formatter": QuickChartFunction(
+                            '''(value) => { return '$' + value; }'''
+                            ),
                     }
                 }
             },
@@ -99,23 +110,23 @@ def parsimonyThread():
 
         return qc.get_url()
 
-
     def generateConfig(configFile: str):
         config = configparser.ConfigParser()
         config.read(configFile)
 
         if not config.has_section("AWS"):
             logging.warning(
-                "AWS section not defined in config.ini. Assuming AWS keys are provided by ENV VAR"
+                "AWS section not defined in config.ini. \
+                Assuming AWS keys are provided by ENV VAR"
             )
 
         return config
 
-
     config = generateConfig("config.ini")
     url = config["quickchart"]["url"]
 
-    # I hate how this boto checking is implemented... but I don't know how to do this better.
+    # I hate how this boto checking is implemented...
+    # but I don't know how to do this better.
     try:
         client = boto3.client(
             "ce",
@@ -129,15 +140,17 @@ def parsimonyThread():
             sts.get_caller_identity()
         except BotoCoreError as e:
             logging.warning(
-                "no AWS credentials found, assuming credentials will be provided later or your forgot to provide via ENV VAR or config.ini \n    actual BotoCore error: "
-                + format(str(e))
+                "no AWS credentials found, assuming credentials will be provided later \
+                or your forgot to provide via ENV VAR or config.ini \n \
+                    actual BotoCore error: " + format(str(e))
             )
 
     try:
         slack_token = config["slack"]["slack_bot_token"]
         slack_signing_secret = config["slack"]["slack_signing_secret"]
     except KeyError:
-        if os.environ.get("SLACK_BOT_TOKEN") and os.environ.get("SLACK_SIGNING_SECRET"):
+        if (os.environ.get("SLACK_BOT_TOKEN") and
+                os.environ.get("SLACK_SIGNING_SECRET")):
             slack_token = os.environ.get("SLACK_BOT_TOKEN")
             slack_signing_secret = os.environ.get("SLACK_SIGNING_SECRET")
         else:
@@ -146,10 +159,11 @@ def parsimonyThread():
 
     app = App(token=slack_token, signing_secret=slack_signing_secret)
 
-    @app.event("app_home_opened") # type: ignore
+    @app.event("app_home_opened")  # type: ignore
     def update_home_tab(client, event, logger):
         try:
-            # views.publish is the method that your app uses to push a view to the Home tab
+            # views.publish is the method that your 
+            # app uses to push a view to the Home tab
             client.views_publish(
                 # the user that opened your app's app home
                 user_id=event["user"],
@@ -171,7 +185,8 @@ def parsimonyThread():
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": "Available Commands Are: \n `/parsimony` - run parsimony with defaults",
+                                "text": "Available Commands Are: \n `/parsimony` \
+                                - run parsimony with defaults",
                             },
                         },
                     ],
@@ -181,8 +196,7 @@ def parsimonyThread():
         except Exception as e:
             logger.error(f"Error publishing home tab: {e}")
 
-
-    @app.command("/parsimony") # type: ignore
+    @app.command("/parsimony")  # type: ignore
     def slash_parsimony(ack, respond, logger):
         try:
             start, end = getDays()
@@ -195,7 +209,8 @@ def parsimonyThread():
                     "blocks": [
                         {
                             "type": "image",
-                            "title": {"type": "plain_text", "text": "Latest data"},
+                            "title": {"type": "plain_text",
+                                      "text": "Latest data"},
                             "block_id": "quickchart-image",
                             "image_url": chart_url,
                             "alt_text": "Chart showing latest data",
@@ -206,9 +221,52 @@ def parsimonyThread():
 
         except Exception as e:
             logger.error(f"Error publishing slash parsimony: {e}")
-            
+
+    @app.command("/parsimony-config")  # type: ignore
+    def open_modal(ack, body, client):
+        # Acknowledge the command request
+        ack()
+        # Call views_open with the built-in client
+        client.views_open(
+            # Pass a valid trigger_id within 3 seconds of receiving it
+            trigger_id=body["trigger_id"],
+            # View payload
+            view={
+                "type": "modal",
+                # View identifier
+                "callback_id": "view_1",
+                "title": {"type": "plain_text", "text": "My App"},
+                "submit": {"type": "plain_text", "text": "Submit"},
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn",
+                                 "text": "Welcome to a modal with _blocks_"},
+                        "accessory": {
+                            "type": "button",
+                            "text": {"type": "plain_text",
+                                     "text": "Click me!"},
+                            "action_id": "button_abc"
+                        }
+                    },
+                    {
+                        "type": "input",
+                        "block_id": "input_c",
+                        "label": {"type": "plain_text",
+                                  "text": "What are your hopes and dreams?"},
+                        "element": {
+                            "type": "plain_text_input",
+                            "action_id": "dreamy_input",
+                            "multiline": True
+                        }
+                    }
+                ]
+            }
+        )
+
     app.start(port=int(os.environ.get("PORT", 3000)))
     print("Exiting " + threading.currentThread().getName())
+
 
 if __name__ == "__main__":
     threading.Thread(name='HealthCheck', target=healthcheckThread).start()
