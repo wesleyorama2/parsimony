@@ -31,7 +31,7 @@ def parsimonyThread():
     def getDays():
         today = date.today()
         start = today - timedelta(days=today.weekday() + 1 % 7)
-        end = start + timedelta(days=6)
+        end = start - timedelta(days=6)
 
         start = str(start)
         end = str(end)
