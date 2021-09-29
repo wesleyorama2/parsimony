@@ -15,7 +15,7 @@ import threading
 def healthcheckThread():
     print("Starting " + threading.currentThread().getName())
     # TODO: Maybe something lighter than flask?
-    # Also implement real healthcheck...
+    # Also implement real healthcheck..
     health = Flask(__name__)
 
     @health.route('/healthz')
