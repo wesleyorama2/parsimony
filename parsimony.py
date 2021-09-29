@@ -232,35 +232,45 @@ def parsimonyThread():
             trigger_id=body["trigger_id"],
             # View payload
             view={
-                "type": "modal",
-                # View identifier
-                "callback_id": "view_1",
-                "title": {"type": "plain_text", "text": "My App"},
-                "submit": {"type": "plain_text", "text": "Submit"},
+                "title": {
+                    "type": "plain_text",
+                    "text": "Configure Parsimony"
+                },
+                "submit": {
+                    "type": "plain_text",
+                    "text": "Submit"
+                },
                 "blocks": [
                     {
-                        "type": "section",
-                        "text": {"type": "mrkdwn",
-                                 "text": "Welcome to a modal with _blocks_"},
-                        "accessory": {
-                            "type": "button",
-                            "text": {"type": "plain_text",
-                                     "text": "Click me!"},
-                            "action_id": "button_abc"
+                        "type": "input",
+                        "element": {
+                            "type": "plain_text_input",
+                            "action_id": "title",
+                            "placeholder": {
+                                "type": "plain_text",
+                                "text": "Account Number"
+                            }
+                        },
+                        "label": {
+                            "type": "plain_text",
+                            "text": "AWS Accounts"
                         }
                     },
                     {
-                        "type": "input",
-                        "block_id": "input_c",
-                        "label": {"type": "plain_text",
-                                  "text": "What are your hopes and dreams?"},
-                        "element": {
-                            "type": "plain_text_input",
-                            "action_id": "dreamy_input",
-                            "multiline": True
-                        }
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "action_id": "add_option",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Add another account  "
+                                }
+                            }
+                        ]
                     }
-                ]
+                ],
+                "type": "modal"
             }
         )
 
