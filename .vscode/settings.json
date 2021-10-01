@@ -1,8 +1,10 @@
 {
-    "python.linting.pylintEnabled": true,
+    "python.linting.pylintEnabled": false,
     "python.linting.enabled": true,
     "cSpell.words": [
         "healthz",
         "mrkdwn"
-    ]
+    ],
+    "python.pythonPath": "parsimony/bin/python3.9",
+    "python.linting.flake8Enabled": true
 }

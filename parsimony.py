@@ -27,6 +27,8 @@ def healthcheckThread():
 
 def parsimonyThread():
     print("Starting " + threading.currentThread().getName())
+    account_count = 1
+    accounts = []
 
     def getDays():
         today = date.today()
@@ -42,13 +44,13 @@ def parsimonyThread():
         response = client.get_cost_and_usage(
             TimePeriod={"Start": start, "End": end},
             Granularity="DAILY",
-            # Filter={
-            #     'Dimensions': {
-            #         'Key': 'LINKED_ACCOUNT',
-            #         'Values': [''],
-            #         'MatchOptions': ['EQUALS']
-            #     }
-            # },
+            Filter={
+                'Dimensions': {
+                    'Key': 'LINKED_ACCOUNT',
+                    'Values': accounts,
+                    'MatchOptions': ['EQUALS']
+                }
+            },
             Metrics=[
                 "AmortizedCost",
             ],
@@ -162,7 +164,7 @@ def parsimonyThread():
     @app.event("app_home_opened")  # type: ignore
     def update_home_tab(client, event, logger):
         try:
-            # views.publish is the method that your 
+            # views.publish is the method that your
             # app uses to push a view to the Home tab
             client.views_publish(
                 # the user that opened your app's app home
@@ -222,16 +224,8 @@ def parsimonyThread():
         except Exception as e:
             logger.error(f"Error publishing slash parsimony: {e}")
 
-    @app.command("/parsimony-config")  # type: ignore
-    def open_modal(ack, body, client):
-        # Acknowledge the command request
-        ack()
-        # Call views_open with the built-in client
-        client.views_open(
-            # Pass a valid trigger_id within 3 seconds of receiving it
-            trigger_id=body["trigger_id"],
-            # View payload
-            view={
+    def account_modal_view(number_of_accounts: int):
+        view = {
                 "title": {
                     "type": "plain_text",
                     "text": "Configure Parsimony"
@@ -242,26 +236,11 @@ def parsimonyThread():
                 },
                 "blocks": [
                     {
-                        "type": "input",
-                        "element": {
-                            "type": "plain_text_input",
-                            "action_id": "title",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Account Number"
-                            }
-                        },
-                        "label": {
-                            "type": "plain_text",
-                            "text": "AWS Accounts"
-                        }
-                    },
-                    {
                         "type": "actions",
                         "elements": [
                             {
                                 "type": "button",
-                                "action_id": "add_option",
+                                "action_id": "add_account",
                                 "text": {
                                     "type": "plain_text",
                                     "text": "Add another account  "
@@ -270,9 +249,69 @@ def parsimonyThread():
                         ]
                     }
                 ],
-                "type": "modal"
+                "type": "modal",
+                "callback_id": "config_view"
             }
+        for i in range(number_of_accounts):
+            account_input = {
+                                "type": "input",
+                                "block_id": f"account_{i}",
+                                "element": {
+                                    "type": "plain_text_input",
+                                    "action_id": f"account_input_{i}",
+                                    "placeholder": {
+                                        "type": "plain_text",
+                                        "text": "Account Number"
+                                    }
+                                },
+                                "label": {
+                                    "type": "plain_text",
+                                    "text": "AWS Account"
+                                }
+                            }
+            view["blocks"].append(account_input)
+        return view
+
+    @app.command("/parsimony-config")  # type: ignore
+    def open_modal(ack, body, client):
+        # Acknowledge the command request
+        ack()
+        # Call views_open with the built-in client
+        client.views_open(
+            # Pass a valid trigger_id within 3 seconds of receiving it
+            trigger_id=body["trigger_id"],
+            # View payload
+            view=account_modal_view(account_count)
         )
+
+    @app.action("add_account")
+    def update_modal(ack, body, client):
+        nonlocal account_count
+        account_count += 1
+        # Acknowledge the button request
+        ack()
+        # Call views_update with the built-in client
+        client.views_update(
+            # Pass the view_id
+            view_id=body["view"]["id"],
+            # String that represents view state
+            # to protect against race conditions
+            hash=body["view"]["hash"],
+            # View payload with updated blocks
+            view=account_modal_view(account_count)
+        )
+
+    @app.view("config_view")
+    def handle_submission(ack, body, client, view, logger):
+        ack()
+        nonlocal accounts
+        for account_input in view["state"]["values"]:
+            for test in view["state"]["values"][f"{account_input}"]:
+                accounts.append(str((view["state"]
+                                     ["values"]
+                                     [f"{account_input}"]
+                                     [f"{test}"]
+                                     ["value"])))
 
     app.start(port=int(os.environ.get("PORT", 3000)))
     print("Exiting " + threading.currentThread().getName())
