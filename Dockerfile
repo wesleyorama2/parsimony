@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.8.12-alpine3.14 as base
+FROM tiangolo/uvicorn-gunicorn:python3.8-alpine3.10 as base
 
 FROM base as builder
 
@@ -35,7 +35,7 @@ COPY . /app
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 
-EXPOSE 3000 5000
+EXPOSE 3000
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "parsimony.py"]
+CMD ["uvicorn", "parsimony:api", "--host", "--port 3000"]

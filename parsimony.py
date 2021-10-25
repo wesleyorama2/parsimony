@@ -4,9 +4,11 @@ import os
 import boto3
 import configparser
 from datetime import date, timedelta
+from fastapi import FastAPI, Request
 import logging
 from botocore.exceptions import BotoCoreError
 from slack_bolt import App  # type: ignore
+from slack_bolt.adapter.fastapi import SlackRequestHandler
 from quickchart import QuickChart, QuickChartFunction
 
 account_count = 1
@@ -145,6 +147,7 @@ except KeyError:
         os._exit(2)
 
 app = App(token=slack_token, signing_secret=slack_signing_secret)
+app_handler = SlackRequestHandler(app)
 
 
 def account_modal_view(number_of_accounts: int):
@@ -192,8 +195,22 @@ def account_modal_view(number_of_accounts: int):
                 "text": "AWS Account"
             }
         }
+        # noinspection PyTypeChecker
         view["blocks"].append(account_input)
     return view
+
+
+api = FastAPI()
+
+
+@api.post("/slack/events")
+async def endpoint(req: Request):
+    return await app_handler.handle(req)
+
+
+@api.get("/healthcheck")
+async def health_check():
+    return {"healthy": "true"}
 
 
 @app.event("app_home_opened")  # type: ignore
