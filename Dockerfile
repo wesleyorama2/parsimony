@@ -38,4 +38,4 @@ USER appuser
 EXPOSE 3000
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["uvicorn", "parsimony:api", "--host", "--port 3000"]
+CMD ["uvicorn", "parsimony:api", "--host", "0.0.0.0", "--port 3000"]
