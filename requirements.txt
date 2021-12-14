@@ -19,7 +19,7 @@ quickchart.io==1.0.0
 requests==2.26.0
 s3transfer==0.5.0
 six==1.16.0
-slack-bolt==1.9.3
+slack-bolt==1.11.0
 slack-sdk==3.11.2
 sniffio==1.2.0
 starlette==0.16.0
