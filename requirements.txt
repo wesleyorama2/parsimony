@@ -22,7 +22,7 @@ six==1.16.0
 slack-bolt==1.9.3
 slack-sdk==3.11.2
 sniffio==1.2.0
-starlette==0.16.0
+starlette==0.20.0
 typing-extensions==3.10.0.2
 urllib3==1.26.7
 uvicorn==0.15.0
